@@ -20,8 +20,13 @@ class FuelPredictor:
         "Horsepower (kw)", "Year", "Price (Lakhs)"
     ]
 
-    def __init__(self, model_path="best_model.pkl"):
+    def __init__(
+        self,
+        model_path="best_model.pkl",
+        encoder_path="ordinal_encoder.pkl"
+    ):
         self.pipeline = joblib.load(model_path)
+        self.encoder = joblib.load(encoder_path)
 
     def _prepare_dataframe(self, data):
         if isinstance(data, dict):
@@ -29,9 +34,17 @@ class FuelPredictor:
         elif isinstance(data, pd.DataFrame):
             df = data.copy()
         else:
-            raise TypeError("Les données doivent être un dictionnaire ou un DataFrame")
-
-        return df[self._FEATURE_ORDER]
+            raise TypeError(
+                "Les données doivent être un dictionnaire ou un DataFrame"
+            )
+        df = df[self._FEATURE_ORDER]
+        cat_cols = [
+            "Company",
+            "Type",
+            "Transmission"
+        ]
+        df[cat_cols] = self.encoder.transform(df[cat_cols])
+        return df
 
     def predict(self, data):
         X = self._prepare_dataframe(data)
